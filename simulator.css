@@ -1,0 +1,20 @@
+#gm-simulator-menu {
+	position: absolute;
+	box-shadow: 3px 3px 3px 2px #9B9292;
+	vertical-align: top;
+	z-index: 999;
+}
+
+.gm-simulator-menu-item {
+	white-space: nowrap;
+	padding: 0.4em 0.6em;
+	cursor: pointer;
+}
+
+.gm-simulator-menu-item:hover {
+	background-color: #fcfcfc;
+}
+
+.gm-simulator-menu-item + .gm-simulator-menu-item {
+	border-top: 1px solid silver;
+}
