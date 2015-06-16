@@ -1,6 +1,6 @@
 GM_simulator
 ============
-This script create a greasemonkey-like environment in browser for testing.
+Create a greasemonkey-like environment in browser for testing.
 
 Usage
 -----
