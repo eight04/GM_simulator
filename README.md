@@ -2,6 +2,8 @@ GM_simulator
 ============
 Create a greasemonkey-like environment in browser for testing.
 
+Support Firefox, Google Chrome.
+
 Usage
 -----
 * Put GM_simulator in `<head>`.
@@ -30,3 +32,6 @@ Known restriction
 Todos
 -----
 * Check @grant before calling APIs.
+* Autoload required scripts.
+* Do not replace context menu if threre is no registered command.
+* Support IE?
