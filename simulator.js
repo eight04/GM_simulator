@@ -60,47 +60,85 @@ var GM = function(){
 		currentScript = scriptObj;
 	}
 
-	function createMetaObj(meta) {
-		var re = /^\/\/ @(\S+)(.+)$/gm,
-			metaObj = {
-				description: "",
-				excludes: [],
-				includes: [],
-				matches: [],
-				name: "",
-				namespace: "",
-				resources: {},
-				"run-at": "document-end",
-				unwrap: false,
-				version: ""
-			}, match, key, value;
+	function addResouce(resource, list) {
+		var i, line;
+		for (i = 0; i < list.length; i++) {
+			line = list[i].split(/\s+/);
+			resource[line[0]] = line[1];
+		}
+	}
 
-		while ((match = re.exec(meta))) {
-			key = match[1];
-			value = match[2].trim();
+	function createInfoScript(meta) {
+		var infoScript = {
+			description: "",
+			excludes: [],
+			includes: [],
+			matches: [],
+			name: "",
+			namespace: "",
+			resources: {},
+			"run-at": "document-end",
+			unwrap: false,
+			version: ""
+		};
+
+		var key, values;
+		for (key in meta) {
+			values = meta[key];
+
 			switch (key) {
 				case "include":
-					metaObj.includes.push(value);
+					infoScript.includes.push.apply(infoScript.includes, values);
 					break;
 				case "exclude":
-					metaObj.excludes.push(value);
+					infoScript.excludes.push.apply(infoScript.excludes, values);
 					break;
 				case "match":
-					metaObj.matches.push(value);
+					infoScript.matches.push.apply(infoScript.matches, values);
 					break;
 				case "resource":
-					value = value.split(/\s+/);
-					metaObj.resources[value[0]] = value[1];
+					addResouce(infoScript, values);
 					break;
 				case "unwrap":
-					metaObj.unwrap = true;
+					infoScript.unwrap = true;
 					break;
 				default:
-					metaObj[key] = value;
+					if (key in infoScript) {
+						infoScript[key] = values[0];
+					}
 			}
 		}
 
+		return infoScript;
+	}
+
+	function parseMeta(meta) {
+		var re = /^\/\/ @(\S+)(.+)$/gm,
+			metaObj = {},
+			match;
+
+		while ((match = re.exec(meta))) {
+			if (!(meta[1] in metaObj)) {
+				metaObj[meta[1]] = [];
+			}
+			metaObj[meta[1]].push(match[2].trim());
+		}
+
 		return metaObj;
+	}
+
+	function createGrant(meta) {
+		var grants = {
+			none: true
+		};
+		if (!meta.grant) {
+			return grants;
+		}
+		var i;
+		for (i = 0; i < meta.grant.length; i++) {
+			grants[meta.grant[i]] = true;
+		}
+		return grants;
 	}
 
 	function createScriptInfo(script, callback) {
@@ -119,8 +157,12 @@ var GM = function(){
 				}
 				meta = meta[0];
 
+				script.meta = parseMeta(meta);
+
+				script.grants = createGrant(script.meta);
+
 				script.info = {
-					script: createMetaObj(meta),
+					script: createInfoScript(script.meta),
 					scriptMetaStr: meta,
 					scriptWillUpdate: false,
 					version: "GM Simulator"
