@@ -40,15 +40,17 @@ var GM = function(){
 				injectScript(scriptObj);
 				return;
 			}
+
 			var count = 0;
-			scriptObj.meta.forEach(function(url){
+			var countDown = function(){
+				count--;
+				if (!count) {
+					injectScript(scriptObj);
+				}
+			};
+			scriptObj.meta.require.forEach(function(url){
 				count++;
-				injectScriptUrl(url, function(){
-					count--;
-					if (!count) {
-						injectScript(scriptObj);
-					}
-				});
+				injectScriptUrl(url, countDown);
 			});
 		}
 
