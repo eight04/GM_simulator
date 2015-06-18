@@ -467,6 +467,13 @@ var GM = function(){
 		menu.style.display = "none";
 	}
 
+	function injectScriptUrl(url) {
+		var element = document.createElement("script");
+		element.src = url;
+		document.head.appendChild(element);
+		return element;
+	}
+
 	function injectScript(script) {
 		if (script.injected || !script.info) {
 			return;
@@ -476,11 +483,8 @@ var GM = function(){
 		}
 		GM.script = currentScript = script;
 
-		script.element = document.createElement("script");
-		script.element.src = script.url;
 		script.injected = true;
-
-		document.head.appendChild(script.element);
+		script.element = injectScriptUrl(script.url);
 	}
 
 	// This is a decorator. Check grant value before calling the function
