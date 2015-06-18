@@ -483,9 +483,10 @@ var GM = function(){
 	function checkGrant(name, func) {
 		return function() {
 			if (name in currentScript.grants) {
-				func.apply(0, arguments);
+				return func.apply(0, arguments);
 			} else {
 				alert("Need grant @" + name + "!");
+				return null;
 			}
 		};
 	}
@@ -528,10 +529,17 @@ var GM = function(){
 
 	targets.forEach(function(target){
 		apis.forEach(function(api){
-			Object.defineProperty(target, api[0], {
-				value: api[2] == "FUNC" ? checkGrant(api[0], api[1]) : undefined,
-				get: api[2] == "PROP" ? checkGrant(api[0], api[1]) : undefined
-			});
+			var descriptor;
+			if (api[2] == "PROP") {
+				descriptor = {
+					get: checkGrant(api[0], api[1])
+				};
+			} else {
+				descriptor = {
+					value: checkGrant(api[0], api[1])
+				};
+			}
+			Object.defineProperty(target, api[0], descriptor);
 		});
 	});
 
