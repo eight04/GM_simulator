@@ -172,6 +172,12 @@ var GM = function(){
 					version: "GM Simulator"
 				};
 
+				if (script.meta.require) {
+					script.meta.require.forEach(function(url){
+						injectScriptUrl(url);
+					});
+				}
+
 				callback();
 			}
 		});
