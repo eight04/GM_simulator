@@ -6,6 +6,7 @@
 // @author          eight
 // @license         MIT
 // @resource        sourceCode https://rawgit.com/eight04/GM_simulator/master/test.user.js
+// @require         https://rawgit.com/eight04/GM_config/master/dist/GM_config.js
 // @include         *
 // @grant           GM_addStyle
 // @grant           GM_getValue

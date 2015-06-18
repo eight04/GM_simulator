@@ -35,7 +35,24 @@ var GM = function(){
 
 		scripts[script.src] = scriptObj;
 
-		createScriptInfo(scriptObj, function(){
+		function loadRequire() {
+			if (!scriptObj.meta.require) {
+				injectScript(scriptObj);
+				return;
+			}
+			var count = 0;
+			scriptObj.meta.forEach(function(url){
+				count++;
+				injectScriptUrl(url, function(){
+					count--;
+					if (!count) {
+						injectScript(scriptObj);
+					}
+				});
+			});
+		}
+
+		function loadResource() {
 			var resources = scriptObj.info.script.resources,
 				count = 0;
 
@@ -50,16 +67,18 @@ var GM = function(){
 						scriptObj.resources[key] = response.responseText;
 						count--;
 						if (!count) {
-							injectScript(scriptObj);
+							loadRequire();
 						}
 					}
 				});
 			});
 
 			if (!count) {
-				injectScript(scriptObj);
+				loadRequire();
 			}
-		});
+		}
+
+		createScriptInfo(scriptObj, loadResource);
 
 		GM.script = currentScript = scriptObj;
 	}
@@ -171,12 +190,6 @@ var GM = function(){
 					scriptWillUpdate: false,
 					version: "GM Simulator"
 				};
-
-				if (script.meta.require) {
-					script.meta.require.forEach(function(url){
-						injectScriptUrl(url);
-					});
-				}
 
 				callback();
 			}
@@ -480,8 +493,11 @@ var GM = function(){
 		menu.style.display = "none";
 	}
 
-	function injectScriptUrl(url) {
+	function injectScriptUrl(url, callback) {
 		var element = document.createElement("script");
+		if (callback) {
+			element.onload = callback;
+		}
 		element.src = url;
 		document.head.appendChild(element);
 		return element;
