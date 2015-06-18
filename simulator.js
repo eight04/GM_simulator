@@ -206,7 +206,6 @@ var GM = function(){
 	}
 
 	function setValue(key, value) {
-		console.log(key, value);
 		getStorage()[key] = value;
 		saveStorage();
 	}

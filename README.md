@@ -35,3 +35,4 @@ Todos
 * Autoload required scripts.
 * Do not replace context menu if threre is no registered command.
 * Support IE?
+* Do not replace context menu if holding modifier keys.
