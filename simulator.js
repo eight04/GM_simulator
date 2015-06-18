@@ -452,6 +452,13 @@ var GM = function(){
 	}
 
 	function showMenu(e) {
+		if (!menus.length) {
+			return;
+		}
+		if (e.shiftKey || e.altKey || e.ctrlKey) {
+			return;
+		}
+
 		var menu = getMenu();
 
 		if (!menu) {
