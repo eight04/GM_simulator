@@ -173,57 +173,6 @@ var GM = function(){
 		});
 	}
 
-	function getRawStack() {
-		var err = new Error;
-		if (err.stack) {
-			return err.stack;
-		}
-		try {
-			throw err;
-		} catch (e) {
-			return e.stack;
-		}
-	}
-
-	function urljoin(base, url) {
-		if (url[0] == "/") {
-			return base.match(/^.+?:\/\/[^\/]+/)[0] + url;
-		}
-		if (/^https?:\/\//.test(url)) {
-			return url;
-		}
-		return base.match(/^(.+?\/)[^\/]*$/)[1] + url;
-	}
-
-	function getStack() {
-		var raw = getRawStack(),
-			swap = [],
-			re = /^(?:\s+at)? ?([^@\n]*)?[@ ]\(?(.+?):\d+:\d+\)?$/gm,
-			match;
-
-		while ((match = re.exec(raw))) {
-			swap.push({
-				name: match[1],
-				file: urljoin(location.href, match[2])
-			});
-		}
-
-		return swap;
-	}
-
-	function getCurrentScript() {
-		var stack = getStack(),
-			i;
-
-		for (i = 0; i < stack.length; i++) {
-			if (stack[i].file in scripts) {
-				return scripts[stack[i].file];
-			}
-		}
-
-		return null;
-	}
-
 	function getStorage() {
 		if (!storage) {
 			if ("GM_simulator" in localStorage) {
@@ -261,23 +210,24 @@ var GM = function(){
 		return Object.keys(getStorage());
 	}
 
-	function getInfo(script) {
+	function getInfo() {
+		var script = currentScript;
 		if (!script.info) {
 			script.info = createScriptInfo(script);
 		}
 		return script.info;
 	}
 
-	function getResourceURL(script, key) {
-		var resources = getInfo(script).script.resources;
+	function getResourceURL(key) {
+		var resources = currentScript.script.resources;
 		if (!(key in resources)) {
 			throw Error;
 		}
 		return resources[key];
 	}
 
-	function getResourceText(script, key) {
-		var resources = script.resources;
+	function getResourceText(key) {
+		var resources = currentScript.resources;
 		if (!(key in resources)) {
 			throw Error;
 		}
@@ -428,28 +378,6 @@ var GM = function(){
 		return window;
 	}
 
-	function bindScript(func) {
-		return function() {
-			var script = getCurrentScript() || currentScript,
-				args = [script];
-
-			args.push.apply(args, arguments);
-			currentScript = script;
-
-			return func.apply(this, args);
-		};
-	}
-
-	function bindUrl(func) {
-		return function(url) {
-			if (!(url in scripts)) {
-				throw "Can not find userscript: " + url;
-			}
-			arguments[0] = scripts[url];
-			return func.apply(this, arguments);
-		};
-	}
-
 	// Collect userscripts
 	if ("onbeforescriptexecute" in document) {
 		document.addEventListener("beforescriptexecute", function(e){
@@ -566,13 +494,13 @@ var GM = function(){
 	var exports = {
 		menus: menus,
 		scripts: scripts,
-		getInfo: bindUrl(getInfo),
+		getInfo: getInfo,
 		getValue: getValue,
 		setValue: setValue,
 		deleteValue: deleteValue,
 		listValues: listValues,
-		getResourceText: bindUrl(getResourceText),
-		getResourceURL: bindUrl(getResourceURL),
+		getResourceText: getResourceText,
+		getResourceURL: getResourceURL,
 		addStyle: addStyle,
 		log: log,
 		openInTab: openInTab,
@@ -584,7 +512,7 @@ var GM = function(){
 
 	Object.defineProperties(window, {
 		GM_info: {
-			get: bindScript(getInfo)
+			get: getInfo
 		},
 		GM_getValue: {
 			value: getValue
@@ -599,10 +527,10 @@ var GM = function(){
 			value: setValue
 		},
 		GM_getResourceText: {
-			value: bindScript(getResourceText)
+			value: getResourceText
 		},
 		GM_getResourceURL: {
-			value: bindScript(getResourceURL)
+			value: getResourceURL
 		},
 		GM_addStyle: {
 			value: addStyle
