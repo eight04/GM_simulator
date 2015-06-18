@@ -117,12 +117,16 @@ var GM = function(){
 			metaObj = {},
 			match;
 
+		console.log(meta, re);
+
 		while ((match = re.exec(meta))) {
-			if (!(meta[1] in metaObj)) {
-				metaObj[meta[1]] = [];
+			if (!(match[1] in metaObj)) {
+				metaObj[match[1]] = [];
 			}
-			metaObj[meta[1]].push(match[2].trim());
+			metaObj[match[1]].push(match[2].trim());
 		}
+
+		console.log(metaObj);
 
 		return metaObj;
 	}
@@ -482,9 +486,10 @@ var GM = function(){
 	// This is a decorator. Check grant value before calling the function
 	function checkGrant(name, func) {
 		return function() {
-			if (name in currentScript.grants) {
+			if (name in currentScript.grants || name == "GM_info") {
 				return func.apply(0, arguments);
 			} else {
+				console.log(name, currentScript.grants);
 				alert("Need grant @" + name + "!");
 				return null;
 			}
