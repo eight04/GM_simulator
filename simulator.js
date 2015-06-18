@@ -479,6 +479,17 @@ var GM = function(){
 		document.head.appendChild(script.element);
 	}
 
+	// This is a decorator. Check grant value before calling the function
+	function checkGrant(name, func) {
+		return function() {
+			if (name in currentScript.grants) {
+				func.apply(0, arguments);
+			} else {
+				alert("Need grant @" + name + "!");
+			}
+		};
+	}
+
 	// Handle context menu
 	document.addEventListener("contextmenu", showMenu);
 	document.addEventListener("click", hideMenu);
@@ -518,8 +529,8 @@ var GM = function(){
 	targets.forEach(function(target){
 		apis.forEach(function(api){
 			Object.defineProperty(target, api[0], {
-				value: api[2] == "FUNC" ? api[1] : undefined,
-				get: api[2] == "PROP" ? api[1] : undefined
+				value: api[2] == "FUNC" ? checkGrant(api[0], api[1]) : undefined,
+				get: api[2] == "PROP" ? checkGrant(api[0], api[1]) : undefined
 			});
 		});
 	});
