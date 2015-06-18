@@ -491,68 +491,37 @@ var GM = function(){
 		}
 	});
 
+	var apis = [
+		["GM_info", getInfo, "PROP"],
+		["GM_setValue", setValue, "FUNC"],
+		["GM_getValue", getValue, "FUNC"],
+		["GM_deleteValue", deleteValue, "FUNC"],
+		["GM_listValues", listValues, "FUNC"],
+		["GM_getResourceText", getResourceText, "FUNC"],
+		["GM_getResourceURL", getResourceURL, "FUNC"],
+		["GM_addStyle", addStyle, "FUNC"],
+		["GM_log", log, "FUNC"],
+		["GM_openInTab", openInTab, "FUNC"],
+		["GM_registerMenuCommand", registerMenuCommand, "FUNC"],
+		["GM_setClipboard", setClipboard, "FUNC"],
+		["GM_xmlhttpRequest", xmlhttpRequest, "FUNC"],
+		["unsafeWindow", getWindow, "PROP"]
+	];
+
 	var exports = {
 		menus: menus,
-		scripts: scripts,
-		getInfo: getInfo,
-		getValue: getValue,
-		setValue: setValue,
-		deleteValue: deleteValue,
-		listValues: listValues,
-		getResourceText: getResourceText,
-		getResourceURL: getResourceURL,
-		addStyle: addStyle,
-		log: log,
-		openInTab: openInTab,
-		registerMenuCommand: registerMenuCommand,
-		setClipboard: setClipboard,
-		xmlhttpRequest: xmlhttpRequest,
-		getWindow: getWindow
+		scripts: scripts
 	};
 
-	Object.defineProperties(window, {
-		GM_info: {
-			get: getInfo
-		},
-		GM_getValue: {
-			value: getValue
-		},
-		GM_deleteValue: {
-			value: deleteValue
-		},
-		GM_listValues: {
-			value: listValues
-		},
-		GM_setValue: {
-			value: setValue
-		},
-		GM_getResourceText: {
-			value: getResourceText
-		},
-		GM_getResourceURL: {
-			value: getResourceURL
-		},
-		GM_addStyle: {
-			value: addStyle
-		},
-		GM_log: {
-			value: log
-		},
-		GM_openInTab: {
-			value: openInTab
-		},
-		GM_registerMenuCommand: {
-			value: registerMenuCommand
-		},
-		GM_setClipboard: {
-			value: setClipboard
-		},
-		GM_xmlhttpRequest: {
-			value: xmlhttpRequest
-		},
-		unsafeWindow: {
-			get: getWindow
-		}
+	var targets = [window, exports];
+
+	targets.forEach(function(target){
+		apis.forEach(function(api){
+			Object.defineProperty(target, api[0], {
+				value: api[2] == "FUNC" ? api[1] : undefined,
+				get: api[2] == "PROP" ? api[1] : undefined
+			});
+		});
 	});
 
 	return exports;
