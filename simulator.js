@@ -2,6 +2,10 @@ var GM = function(){
 
 	"use strict";
 
+	var GM = {
+		script: null
+	};
+
 	var scripts = {},
 		storage,
 		menus = [],
@@ -57,7 +61,7 @@ var GM = function(){
 			}
 		});
 
-		currentScript = scriptObj;
+		GM.script = currentScript = scriptObj;
 	}
 
 	function addResouce(resource, list) {
@@ -97,7 +101,7 @@ var GM = function(){
 					infoScript.matches.push.apply(infoScript.matches, values);
 					break;
 				case "resource":
-					addResouce(infoScript, values);
+					addResouce(infoScript.resources, values);
 					break;
 				case "unwrap":
 					infoScript.unwrap = true;
@@ -117,16 +121,12 @@ var GM = function(){
 			metaObj = {},
 			match;
 
-		console.log(meta, re);
-
 		while ((match = re.exec(meta))) {
 			if (!(match[1] in metaObj)) {
 				metaObj[match[1]] = [];
 			}
 			metaObj[match[1]].push(match[2].trim());
 		}
-
-		console.log(metaObj);
 
 		return metaObj;
 	}
@@ -225,7 +225,7 @@ var GM = function(){
 	function getResourceURL(key) {
 		var resources = currentScript.script.resources;
 		if (!(key in resources)) {
-			throw Error;
+			throw new Error("Can not find resource: " + key);
 		}
 		return resources[key];
 	}
@@ -233,7 +233,7 @@ var GM = function(){
 	function getResourceText(key) {
 		var resources = currentScript.resources;
 		if (!(key in resources)) {
-			throw Error;
+			throw new Error("Can not find resource: " + key);
 		}
 		return resources[key];
 	}
@@ -474,7 +474,7 @@ var GM = function(){
 		if (script.info.script["run-at"] == "document-end" && document.readyState == "loading") {
 			return;
 		}
-		currentScript = script;
+		GM.script = currentScript = script;
 
 		script.element = document.createElement("script");
 		script.element.src = script.url;
@@ -489,7 +489,6 @@ var GM = function(){
 			if (name in currentScript.grants || name == "GM_info") {
 				return func.apply(0, arguments);
 			} else {
-				console.log(name, currentScript.grants);
 				alert("Need grant @" + name + "!");
 				return null;
 			}
@@ -525,12 +524,7 @@ var GM = function(){
 		["unsafeWindow", getWindow, "PROP"]
 	];
 
-	var exports = {
-		menus: menus,
-		scripts: scripts
-	};
-
-	var targets = [window, exports];
+	var targets = [window, GM];
 
 	targets.forEach(function(target){
 		apis.forEach(function(api){
@@ -548,6 +542,6 @@ var GM = function(){
 		});
 	});
 
-	return exports;
+	return GM;
 }();
 
