@@ -6,7 +6,7 @@ var GM = function(){
 		script: null
 	};
 
-	var scripts = {},
+	var scripts = [],
 		storage,
 		menus = [];
 
@@ -21,7 +21,7 @@ var GM = function(){
 		if (!isGMScript(script)) {
 			return;
 		}
-		if (script.src in scripts) {
+		if (script.IN_SCRIPTS) {
 			return;
 		}
 
@@ -32,7 +32,8 @@ var GM = function(){
 			url: script.src
 		};
 
-		scripts[script.src] = scriptObj;
+		scripts.push(scriptObj);
+		script.IN_SCRIPTS = true;
 
 		function loadRequire() {
 			if (!scriptObj.meta.require) {
@@ -534,10 +535,7 @@ var GM = function(){
 
 	// Handle document-end scripts
 	document.addEventListener("DOMContentLoaded", function(){
-		var key;
-		for (key in scripts) {
-			injectScript(scripts[key]);
-		}
+		scripts.forEach(injectScript);
 	});
 
 	var apis = [
