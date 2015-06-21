@@ -8,8 +8,7 @@ var GM = function(){
 
 	var scripts = {},
 		storage,
-		menus = [],
-		currentScript;
+		menus = [];
 
 	function isGMScript(script) {
 		if (!script.src || script.src.lastIndexOf(".user.js") != script.src.length - 8) {
@@ -82,7 +81,7 @@ var GM = function(){
 
 		createScriptInfo(scriptObj, loadResource);
 
-		GM.script = currentScript = scriptObj;
+		GM.script = scriptObj;
 	}
 
 	function addResouce(resource, list) {
@@ -236,15 +235,14 @@ var GM = function(){
 	}
 
 	function getInfo() {
-		var script = currentScript;
-		if (!script.info) {
-			script.info = createScriptInfo(script);
+		if (!GM.script.info) {
+			GM.script.info = createScriptInfo(GM.script);
 		}
-		return script.info;
+		return GM.script.info;
 	}
 
 	function getResourceURL(key) {
-		var resources = currentScript.script.resources;
+		var resources = GM.script.script.resources;
 		if (!(key in resources)) {
 			throw new Error("Can not find resource: " + key);
 		}
@@ -252,7 +250,7 @@ var GM = function(){
 	}
 
 	function getResourceText(key) {
-		var resources = currentScript.resources;
+		var resources = GM.script.resources;
 		if (!(key in resources)) {
 			throw new Error("Can not find resource: " + key);
 		}
@@ -512,7 +510,7 @@ var GM = function(){
 		if (script.info.script["run-at"] == "document-end" && document.readyState == "loading") {
 			return;
 		}
-		GM.script = currentScript = script;
+		GM.script = script;
 
 		script.injected = true;
 		script.element = injectScriptUrl(script.url);
@@ -521,7 +519,7 @@ var GM = function(){
 	// This is a decorator. Check grant value before calling the function
 	function checkGrant(name, func) {
 		return function() {
-			if (name in currentScript.grants || name == "GM_info") {
+			if (name in GM.script.grants || name == "GM_info") {
 				return func.apply(0, arguments);
 			} else {
 				alert("Need grant @" + name + "!");
