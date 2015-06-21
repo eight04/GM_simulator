@@ -424,35 +424,6 @@ var GM = function(){
 		return window;
 	}
 
-	// Collect userscripts
-	if ("onbeforescriptexecute" in document) {
-		document.addEventListener("beforescriptexecute", function(e){
-			if (e.target.parentNode == document.head) {
-				beforeExecute(e.target, function(){
-					e.preventDefault();
-					e.target.parentNode.removeChild(e.target);
-				});
-			}
-		});
-	} else {
-		new MutationObserver(function(e){
-			var i, nodes = [];
-			for (i = 0; i < e.length; i++) {
-				nodes.push.apply(nodes, e[i].addedNodes);
-			}
-			nodes.forEach(function(node){
-				if (node.nodeName == "SCRIPT") {
-					beforeExecute(node, function(){
-						node.parentNode.removeChild(node);
-					});
-				}
-			});
-		}).observe(document.head, {
-			childList: true,
-			subtree: true
-		});
-	}
-
 	function getMenu() {
 		return document.querySelector("#gm-simulator-menu");
 	}
@@ -548,6 +519,35 @@ var GM = function(){
 				return null;
 			}
 		};
+	}
+
+	// Collect userscripts
+	if ("onbeforescriptexecute" in document) {
+		document.addEventListener("beforescriptexecute", function(e){
+			if (e.target.parentNode == document.head) {
+				beforeExecute(e.target, function(){
+					e.preventDefault();
+					e.target.parentNode.removeChild(e.target);
+				});
+			}
+		});
+	} else {
+		new MutationObserver(function(e){
+			var i, nodes = [];
+			for (i = 0; i < e.length; i++) {
+				nodes.push.apply(nodes, e[i].addedNodes);
+			}
+			nodes.forEach(function(node){
+				if (node.nodeName == "SCRIPT") {
+					beforeExecute(node, function(){
+						node.parentNode.removeChild(node);
+					});
+				}
+			});
+		}).observe(document.head, {
+			childList: true,
+			subtree: true
+		});
 	}
 
 	// Handle context menu
