@@ -6,8 +6,7 @@ var GM = function(){
 		script: null
 	};
 
-	var scripts = [],
-		storage,
+	var storage,
 		menus = [];
 
 	function isGMScript(script) {
@@ -17,72 +16,131 @@ var GM = function(){
 		return true;
 	}
 
-	function beforeExecute(script, stopExecute) {
-		if (!isGMScript(script)) {
+	function loadRequire(script, done) {
+		if (!script.meta.require) {
+			done();
 			return;
 		}
-		if (script.IN_SCRIPTS) {
+
+		var count = 0;
+		var countDown = function(){
+			count--;
+			if (!count) {
+				done();
+			}
+		};
+		script.meta.require.forEach(function(url){
+			count++;
+			injectScriptUrl(url, countDown);
+		});
+	}
+
+	function loadResource(script, done) {
+		var resources = script.info.script.resources,
+			count = 0;
+
+		script.resources = {};
+
+		Object.keys(resources).forEach(function(key){
+			count++;
+			xmlhttpRequest({
+				method: "GET",
+				url: resources[key],
+				onload: function(response) {
+					script.resources[key] = response.responseText;
+					count--;
+					if (done && !count) {
+						done();
+					}
+				}
+			});
+		});
+
+		if (done && !count) {
+			done();
+		}
+	}
+
+	function parseMeta(script, done) {
+		var match = script.source.match(/^\/\/ ==UserScript==[^]+?^\/\/ ==\/UserScript==/m);
+
+		if (!match) {
+			throw "Can not read meta data from " + script.url;
+		}
+
+		script.metaRaw = match[0];
+
+		script.meta = createMeta(script.metaRaw);
+
+		script.grants = createGrant(script.meta);
+
+		script.info = {
+			script: createScriptInfo(script.meta),
+			scriptMetaStr: script.metaRaw,
+			scriptWillUpdate: false,
+			version: "GM Simulator"
+		};
+
+		if (done) {
+			done();
+		}
+	}
+
+	function loadSource(script, done) {
+		// Load source
+		xmlhttpRequest({
+			method: "GET",
+			url: script.url,
+			onload: function(response){
+				script.source = response.responseText;
+				if (done) {
+					done();
+				}
+			}
+		});
+	}
+
+	function createTaskRunner(tasks) {
+		var args;
+
+		function next() {
+			var task = tasks.shift();
+			if (!task) {
+				return;
+			}
+			task.apply(null, args);
+		}
+
+		function start() {
+			args = Array.prototype.slice.call(arguments, 0);
+			args.push(next);
+			next();
+		}
+
+		return {
+			start: start
+		};
+	}
+
+	function loadScript(script) {
+		createTaskRunner([loadSource, parseMeta, loadResource, loadRequire, injectScript]).start(script);
+	}
+
+	function beforeExecute(node, stopExecute) {
+		if (!isGMScript(node)) {
+			return;
+		}
+		if (node.IS_INJECTED) {
 			return;
 		}
 
 		stopExecute();
 
-		var scriptObj = {
-			element: script,
-			url: script.src
+		var script = GM.script = {
+			url: node.src
 		};
 
-		scripts.push(scriptObj);
-		script.IN_SCRIPTS = true;
-
-		function loadRequire() {
-			if (!scriptObj.meta.require) {
-				injectScript(scriptObj);
-				return;
-			}
-
-			var count = 0;
-			var countDown = function(){
-				count--;
-				if (!count) {
-					injectScript(scriptObj);
-				}
-			};
-			scriptObj.meta.require.forEach(function(url){
-				count++;
-				injectScriptUrl(url, countDown);
-			});
-		}
-
-		function loadResource() {
-			var resources = scriptObj.info.script.resources,
-				count = 0;
-
-			scriptObj.resources = {};
-
-			Object.keys(resources).forEach(function(key){
-				count++;
-				xmlhttpRequest({
-					method: "GET",
-					url: resources[key],
-					onload: function(response) {
-						scriptObj.resources[key] = response.responseText;
-						count--;
-						if (!count) {
-							loadRequire();
-						}
-					}
-				});
-			});
-
-			if (!count) {
-				loadRequire();
-			}
-		}
-
-		createScriptInfo(scriptObj, loadResource);
-
-		GM.script = scriptObj;
+		loadScript(script);
 	}
 
 	function addResouce(resource, list) {
@@ -93,7 +151,7 @@ var GM = function(){
 		}
 	}
 
-	function createInfoScript(meta) {
+	function createScriptInfo(meta) {
 		var infoScript = {
 			description: "",
 			excludes: [],
@@ -137,7 +195,7 @@ var GM = function(){
 		return infoScript;
 	}
 
-	function parseMeta(meta) {
+	function createMeta(meta) {
 		var re = /^\/\/ @(\S+)(.+)$/gm,
 			metaObj = {},
 			match;
@@ -164,38 +222,6 @@ var GM = function(){
 			grants[meta.grant[i]] = true;
 		}
 		return grants;
-	}
-
-	function createScriptInfo(script, callback) {
-		xmlhttpRequest({
-			method: "GET",
-			url: script.url,
-			onload: function(response){
-				var meta;
-
-				script.source = response.responseText;
-
-				meta = script.source.match(/^\/\/ ==UserScript==[^]+?^\/\/ ==\/UserScript==/m);
-
-				if (!meta) {
-					throw "Can not read meta data from " + script.url;
-				}
-				meta = meta[0];
-
-				script.meta = parseMeta(meta);
-
-				script.grants = createGrant(script.meta);
-
-				script.info = {
-					script: createInfoScript(script.meta),
-					scriptMetaStr: meta,
-					scriptWillUpdate: false,
-					version: "GM Simulator"
-				};
-
-				callback();
-			}
-		});
 	}
 
 	function getStorage() {
@@ -315,6 +341,13 @@ var GM = function(){
 				}
 			};
 
+		// Bind detail, response
+		function wrap(func) {
+			return function() {
+				func.call(detail, response);
+			};
+		}
+
 		if (detail.headers) {
 			for (key in detail.headers) {
 				req.setRequestHeader(key, detail.headers[key]);
@@ -325,9 +358,7 @@ var GM = function(){
 
 		events.forEach(function(name){
 			if (detail["on" + name]) {
-				req["on" + name] = function(){
-					detail["on" + name](response);
-				};
+				req["on" + name] = wrap(detail["on" + name]);
 			}
 		});
 
@@ -343,24 +374,13 @@ var GM = function(){
 			events = ["progress", "load", "error", "abort"];
 			events.forEach(function(name){
 				if ("on" + name in detail.upload) {
-					req.upload.addEventListener(name, function(){
-						detail.upload["on" + name](response);
-					});
+					req.upload.addEventListener(name, wrap(detail.upload["on" + name]));
 				}
 			});
 		}
 
 		if (!detail.synchronous && detail.onreadystatechange) {
-			req.onreadystatechange = function () {
-				detail.onreadystatechange(response);
-			};
-		}
-
-		function abort() {
-			req.abort();
-			if (detail.onabort) {
-				detail.onabort(response);
-			}
+			req.onreadystatechange = wrap(detail.onreadystatechange);
 		}
 
 		req.open(detail.method, detail.url, !detail.synchronous, detail.user, detail.password);
@@ -379,7 +399,9 @@ var GM = function(){
 		}
 
 		var ret = {
-			abort: abort
+			abort: function () {
+				req.abort();
+			}
 		};
 
 		if (detail.synchronous) {
@@ -494,12 +516,13 @@ var GM = function(){
 		menu.style.display = "none";
 	}
 
-	function injectScriptUrl(url, callback) {
+	function injectScriptUrl(url, done) {
 		var element = document.createElement("script");
-		if (callback) {
-			element.onload = callback;
+		if (done) {
+			element.onload = done;
 		}
 		element.src = url;
+		element.IS_INJECTED = true;
 		document.head.appendChild(element);
 		return element;
 	}
@@ -511,8 +534,6 @@ var GM = function(){
 		if (script.info.script["run-at"] == "document-end" && document.readyState == "loading") {
 			return;
 		}
-		GM.script = script;
-
 		script.injected = true;
 		script.element = injectScriptUrl(script.url);
 	}
@@ -535,7 +556,7 @@ var GM = function(){
 
 	// Handle document-end scripts
 	document.addEventListener("DOMContentLoaded", function(){
-		scripts.forEach(injectScript);
+		injectScript(GM.script);
 	});
 
 	var apis = [
