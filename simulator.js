@@ -512,6 +512,9 @@ var GM = function(){
 	// This is a decorator. Check grant value before calling the function
 	function checkGrant(name, func) {
 		return function() {
+			if (!GM.script) {
+				throw "Userscript hasn't loaded";
+			}
 			if (name in GM.script.grants || name == "GM_info") {
 				return func.apply(0, arguments);
 			} else {
@@ -556,7 +559,9 @@ var GM = function(){
 
 	// Handle document-end scripts
 	document.addEventListener("DOMContentLoaded", function(){
-		injectScript(GM.script);
+		if (GM.script) {
+			injectScript(GM.script);
+		}
 	});
 
 	var apis = [
