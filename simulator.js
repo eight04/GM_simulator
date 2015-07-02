@@ -492,7 +492,7 @@ var GM = function(){
 		if (done) {
 			element.onload = done;
 		}
-		element.src = url;
+		element.src = url + "?" + Date.now();
 		element.IS_INJECTED = true;
 		document.head.appendChild(element);
 		return element;
