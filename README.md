@@ -32,3 +32,4 @@ Known restriction
 Todos
 -----
 * Support IE?
+* Currently we doesn't insure the execution order of injected script. Fix this!!
