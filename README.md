@@ -26,7 +26,7 @@ Known restriction
 -----------------
 * This simulator was created to support multiple scripts. But sometimes it is hard to detect which script is runnung. (E.g. register a callback on document.body wich calls GM_setValue)
 * Cross-domain request restriction.
-* Userscript might execute AFTER page loaded. DOMContentLoaded might be not functioning well.
+* Userscript might execute AFTER page loaded. DOMContentLoaded will not fire in such situation.
 
 Todos
 -----
