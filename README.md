@@ -7,7 +7,6 @@ Support Firefox, Google Chrome.
 Usage
 -----
 * Put GM_simulator in `<head>`.
-* Put required scripts in `<head>`.
 * Put your userscript in `<head>`.
 * The script will export a `GM` object.
 
