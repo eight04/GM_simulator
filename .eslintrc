@@ -1,4 +1,5 @@
 {
+	"extends": "eslint:recommended",
 	"env": {
 		"browser": true
 	},
@@ -7,12 +8,9 @@
 			"vars": "local"
 		}],
 		"eqeqeq": 0,
-		"new-parens": 0,
 		"camelcase": 0,
 		"no-console": 0,
 		"no-alert": 0,
-		"no-mixed-spaces-and-tabs": [2, "smart-tabs"],
-		"no-shadow": 0,
-		"no-use-before-define": [2, "nofunc"]
+		"no-mixed-spaces-and-tabs": [2, "smart-tabs"]
 	}
 }
