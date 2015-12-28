@@ -2,12 +2,13 @@ var GM = function(){
 
 	"use strict";
 
+	// Export GM
 	var GM = {
 		script: null
 	};
 
-	var storage,
-		menus = [];
+	var storage,	// setValue/getValue
+		menus = [];	// GM_registerMenuCommand
 
 	function isGMScript(script) {
 		if (!script.src || script.src.lastIndexOf(".user.js") != script.src.length - 8) {
@@ -22,15 +23,15 @@ var GM = function(){
 			return;
 		}
 
-		var count = 0;
+		var count = script.meta.require.length;
 		var countDown = function(){
 			count--;
 			if (!count) {
+				script.ready = true;
 				done();
 			}
 		};
 		script.meta.require.forEach(function(url){
-			count++;
 			injectScriptUrl(url, countDown);
 		});
 	}
@@ -559,7 +560,7 @@ var GM = function(){
 
 	// Handle document-end scripts
 	document.addEventListener("DOMContentLoaded", function(){
-		if (GM.script) {
+		if (GM.script && GM.script.ready && !GM.script.injected) {
 			injectScript(GM.script);
 		}
 	});
