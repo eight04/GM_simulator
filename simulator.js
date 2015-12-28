@@ -10,60 +10,62 @@ var GM = function(){
 	var storage,	// setValue/getValue
 		menus = [];	// GM_registerMenuCommand
 
-	function isGMScript(script) {
-		if (!script.src || script.src.lastIndexOf(".user.js") != script.src.length - 8) {
+	function isGMScript(element) {
+		if (!element.src || element.src.lastIndexOf(".user.js") != element.src.length - 8) {
 			return false;
 		}
 		return true;
 	}
 
-	function loadRequire(script, done) {
-		if (!script.meta.require) {
+	function loadRequire(done) {
+		var require = GM.script.meta.require;
+
+		if (!require) {
 			done();
 			return;
 		}
 
-		var count = script.meta.require.length;
+		var count = require.length;
 		var countDown = function(){
 			count--;
 			if (!count) {
-				script.ready = true;
 				done();
 			}
 		};
-		script.meta.require.forEach(function(url){
+
+		require.forEach(function(url){
 			injectScriptUrl(url, countDown);
 		});
 	}
 
-	function loadResource(script, done) {
-		var resources = script.info.script.resources,
-			count = 0;
+	function loadResource(done) {
+		var resourceUrls = GM.script.info.script.resources,
+			resources = GM.script.resources = {},
+			keys = Object.keys(resourceUrls),
+			count = keys.length;
 
-		script.resources = {};
+		if (!count) {
+			return done();
+		}
 
-		Object.keys(resources).forEach(function(key){
-			count++;
+		keys.forEach(function(key){
 			xmlhttpRequest({
 				method: "GET",
-				url: resources[key],
+				url: resourceUrls[key],
 				onload: function(response) {
-					script.resources[key] = response.responseText;
+					resources[key] = response.responseText;
 					count--;
-					if (done && !count) {
+					if (!count) {
 						done();
 					}
 				}
 			});
 		});
-
-		if (done && !count) {
-			done();
-		}
 	}
 
-	function parseMeta(script, done) {
-		var match = script.source.match(/^\/\/ ==UserScript==[^]+?^\/\/ ==\/UserScript==/m);
+	function parseMeta(done) {
+		var script = GM.script,
+			match = script.source.match(/^\/\/ ==UserScript==[^]+?^\/\/ ==\/UserScript==/m);
 
 		if (!match) {
 			throw "Can not read meta data from " + script.url;
@@ -82,49 +84,45 @@ var GM = function(){
 			version: "GM Simulator"
 		};
 
-		if (done) {
-			done();
-		}
+		done();
 	}
 
-	function loadSource(script, done) {
+	function loadSource(done) {
+		var script = GM.script;
+
 		// Load source
 		xmlhttpRequest({
 			method: "GET",
 			url: script.url,
 			onload: function(response){
 				script.source = response.responseText;
-				if (done) {
-					done();
-				}
+				done();
 			}
 		});
 	}
 
-	function createTaskRunner(tasks) {
-		var args;
+	function injectScript(done) {
+		var script = GM.script;
 
-		function next() {
-			var task = tasks.shift();
-			if (!task) {
-				return;
-			}
-			task.apply(null, args);
+		if (script.info.script["run-at"] == "document-end" && document.readyState == "loading") {
+			document.addEventListener("DOMContentLoaded", injectScript);
+			return;
 		}
 
-		function start() {
-			args = Array.prototype.slice.call(arguments, 0);
-			args.push(next);
-			next();
-		}
-
-		return {
-			start: start
-		};
+		script.element = injectScriptUrl(script.url);
+		done();
 	}
 
-	function loadScript(script) {
-		createTaskRunner([loadSource, parseMeta, loadResource, loadRequire, injectScript]).start(script);
+	function loadScript() {
+		var tasks = [loadSource, parseMeta, loadResource, loadRequire, injectScript];
+
+		function next() {
+			if (tasks.length) {
+				tasks.shift()(next);
+			}
+		}
+
+		next();
 	}
 
 	function beforeExecute(node, stopExecute) {
@@ -137,11 +135,11 @@ var GM = function(){
 
 		stopExecute();
 
-		var script = GM.script = {
+		GM.script = {
 			url: node.src
 		};
 
-		loadScript(script);
+		loadScript();
 	}
 
 	function addResouce(resource, list) {
@@ -499,17 +497,6 @@ var GM = function(){
 		return element;
 	}
 
-	function injectScript(script) {
-		if (script.injected || !script.info) {
-			return;
-		}
-		if (script.info.script["run-at"] == "document-end" && document.readyState == "loading") {
-			return;
-		}
-		script.injected = true;
-		script.element = injectScriptUrl(script.url);
-	}
-
 	// This is a decorator. Check grant value before calling the function
 	function checkGrant(name, func) {
 		return function() {
@@ -557,13 +544,6 @@ var GM = function(){
 	// Handle context menu
 	document.addEventListener("contextmenu", showMenu);
 	document.addEventListener("click", hideMenu);
-
-	// Handle document-end scripts
-	document.addEventListener("DOMContentLoaded", function(){
-		if (GM.script && GM.script.ready && !GM.script.injected) {
-			injectScript(GM.script);
-		}
-	});
 
 	var apis = [
 		["GM_info", getInfo, "PROP"],
