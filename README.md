@@ -6,18 +6,20 @@ Support Firefox, Google Chrome.
 
 Usage
 -----
-* Put GM_simulator in `<head>`.
-* Put your userscript in `<head>`.
-* The script will export a `GM` object.
+Put GM_simulator in `<head>` before your userscript.
+```
+<link rel="stylesheet" href="https://rawgit.com/eight04/GM_simulator/master/simulator.css">
+<script src="https://rawgit.com/eight04/GM_simulator/master/simulator.js"></script>
+<script src="my-userscript.user.js"></script>
+```
+The script will export a `window.GM` object, which contains `GM_*` APIs. These `GM_*` methods and properties are also added to `window` so the userscript can see them.
 
-A simple test file
-------------------
-[Test page][1]
+Live example
+------------
+<https://rawgit.com/eight04/GM_simulator/master/test.html>
 
-[1]: https://rawgit.com/eight04/GM_simulator/master/test.html
-
-How does it works
------------------
+How does it work
+----------------
 1. Detect userscript with `.user.js` extension.
 2. Stop script execution and use ajax to get the source.
 3. Parse GM_info and re-insert the script element.
